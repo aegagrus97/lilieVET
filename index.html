@@ -4014,7 +4014,7 @@ function verifSection(m, compact) {
   const cf = v.cedFile;
   return `<section class="card stack" id="verif"><div class="between"><h3 class="h-s">Verificación de tu cuenta</h3><span class="pill t-${tone}">${lab}</span></div>
     <dl class="dl"><div><dt>Cédula profesional</dt><dd>${esc(m.cedula || '—')}</dd></div><div><dt>Nombre en cédula</dt><dd>${esc(m.full || '—')}</dd></div></dl>
-    ${cf ? `<div class="row nob">${cf.src ? `<button class="phb mini" data-act="lightbox" aria-label="Ver cédula"><img src="${esc(cf.src)}" alt="Cédula"></button>` : ic('file')}<span class="grow small">${esc(cf.name || 'Cédula')}</span>${st !== 'aprobado' ? `<label class="btn btn-ghost btn-sm upl">${ic('camera')} Cambiar<input class="vh" type="file" accept="image/*,application/pdf" data-upload="ced2"></label>` : ''}</div>`
+    ${cf ? `<div class="row nob">${cf.src ? `<button class="phb mini" data-act="lightbox" aria-label="Ver cédula"><img src="${esc(cf.src)}" alt="Cédula"></button>` : ic('file')}<span class="grow small">${esc(cf.name || 'Cédula')}</span>${st !== 'aprobado' ? `<label class="btn btn-ghost btn-sm upl">${ic('camera')} Cambiar<input class="vh" type="file" accept="image/*" data-upload="ced2"></label>` : ''}</div>`
       : st !== 'aprobado' ? fileTile(null, 'ced2', 'Sube tu cédula profesional') : ''}
     ${st === 'aprobado' ? `<p class="small muted meta">${ic('shield')}<span>LilieVET verificó tu cédula${v.approvedAt ? ` el ${fmtDate(isoDate(new Date(v.approvedAt)))}` : ''}. Si cambia, escríbenos.</span></p>` : compact ? `<button class="btn btn-soft btn-sm" data-act="tab" data-tab="solicitudes" style="align-self:flex-start">Ver el estado de tu revisión</button>` : ''}
   </section>`;
@@ -4035,7 +4035,7 @@ function verifView(m) {
     ${stepRow(false, 'Revisamos tu cédula e identidad', `La comparamos con el Registro Nacional de Profesionistas. Te respondemos en ${INE_REPLY}.`)}
     ${stepRow(!!call && call.at < Date.now(), 'Hablamos contigo por WhatsApp o videollamada', call ? `Videollamada: ${slotTxt(call.at)}` : 'Para conocerte y confirmar tus datos')}
   </ol></section>
-  ${st === 'correccion' || !v.cedFile ? `<section class="card stack"><h3 class="h-s">Sube tu cédula</h3>${fileTile(v.cedFile, 'ced2', 'Cédula profesional')}${st === 'correccion' ? `<button class="btn btn-primary" data-act="verifResend">Enviar de nuevo a revisión</button>` : ''}</section>` : ''}
+  ${st === 'correccion' || !v.cedFile ? `<section class="card stack"><h3 class="h-s">Sube tu cédula</h3>${fileTile(v.cedFile, 'ced2', 'Cédula profesional', 'Sube una foto clara de tu cédula', 'image/*')}${st === 'correccion' ? `<button class="btn btn-primary" data-act="verifResend">Enviar de nuevo a revisión</button>` : ''}</section>` : ''}
   <section class="card stack"><h3 class="h-s">Habla con nosotros</h3>
     <p class="small">Para darte de alta, platicamos contigo unos minutos. Elige cómo:</p>
     <a class="btn ${st === 'correccion' ? 'btn-ghost' : 'btn-primary'} btn-block" href="${waVerifUrl(m)}" target="_blank" rel="noopener">${ic('chat')} Escribir por WhatsApp</a>
@@ -7946,7 +7946,9 @@ async function handleUpload(t) {
     } else if (kind === 'csf') {
       const f = files[0], m = meMvz(); m.fiscal = { ...(m.fiscal || {}), csf: { name: f.name, at: Date.now() } }; save(); toast('Constancia de situación fiscal recibida.');
     } else if (kind === 'ced2') {
-      const f = files[0], r = await readImage(f, 1200), m = meMvz(); m.verif = m.verif || {}; m.verif.cedFile = { src: r.src, name: f.name }; save();
+      const f = files[0];
+      if (!f.type.startsWith('image/')) { toast('Para la cédula necesitamos una foto JPG, PNG o WEBP. El PDF no se puede mostrar en la revisión.'); return; }
+      const r = await readImage(f, 1200), m = meMvz(); m.verif = m.verif || {}; m.verif.cedFile = { src: r.src, name: f.name }; save();
       toast(m.status === 'correccion' ? 'Cédula lista. Envíala de nuevo a revisión.' : 'Cédula recibida.');
     } else if (kind === 'cfphoto') {
       const r = await readImage(files[0], 900); if (r.src && ui.cf) { ui.cf.photos = [...(ui.cf.photos || []), r.src].slice(0, 4); }

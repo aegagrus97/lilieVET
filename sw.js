@@ -1,7 +1,7 @@
 /* LilieVET · service worker: permite instalar la app y abrirla rápido.
    Los datos (Supabase) nunca se guardan aquí: siempre se piden al servidor.
    Al publicar una versión nueva, sube el número de VERSION para que los teléfonos la descarguen. */
-const VERSION = 'lilievet-1.0.0';
+const VERSION = 'lilievet-1.0.1';
 const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

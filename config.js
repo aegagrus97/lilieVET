@@ -7,7 +7,7 @@
    Mientras no la conectes, la app ofrece una vista de muestra con datos de ejemplo
    (index.html?demo=tutor, ?demo=mvz o ?demo=admin) para revisar el diseño. */
 window.LV_CONFIG = {
-  supabaseUrl: 'https://TU-PROYECTO.supabase.co',
-  supabaseKey: 'PEGA-AQUI-TU-CLAVE-PUBLISHABLE',
+  supabaseUrl: 'https://uxubynlvjprtowmcfhpl.supabase.co',
+  supabaseKey: 'sb_publishable_ar_9kF2XkjpVb6eQQhP8zw_7c917UeU',
   terminosVersion: '2026-11',
 };

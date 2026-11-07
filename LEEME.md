@@ -1,95 +1,53 @@
-# LilieVET · webapp: cómo publicarla
+# LilieVET · webapp v3.2 (fase 3: cuentas y verificación)
 
-Esta carpeta es la app que van a usar tutores y médicos veterinarios. Ya no usa datos de ejemplo:
-cada persona crea su cuenta y todo se guarda en tu base de datos de Supabase.
+Webapp para tutores, médicos veterinarios y el Panel de LilieVET. Abre en navegador de escritorio y se ajusta en celular. Usa el sistema de diseño LilieVET v3 ("85% serio, 15% carácter") sin modificarlo.
 
-| Archivo | Para qué sirve |
+## Nuevo en la fase 3
+- **Tutor · Perfil:** INE (frente y reverso) y selfie con la INE, con estado (sin enviar, en revisión, verificada, falta corregir). Se pide antes de la primera consulta y no impide agendar. En Inicio, Liebe lo recuerda (arriba si ya hay consulta agendada). También: datos, correo y contraseña, y su código de invitación.
+- **Médico veterinario · Tu alta:** asistente de 6 pasos (datos y número de cédula, INE y selfie, cédula escaneada, especialidad opcional, CLABE opcional, revisar y enviar). Después ve el estado de su solicitud y la nota si hay que corregir. En Perfil edita foto, presentación, especialidad y CLABE (con dígito verificador y banco automático).
+- **Panel · Verificación:** cola de revisión (primero tutores con consulta agendada), documentos de cada cuenta con enlaces de 10 minutos, guía de qué revisar, enlace al Registro Nacional de Profesionistas, WhatsApp y correo, y Aprobar / Pedir corrección / Rechazar con nota. Historial de decisiones. El contador del menú muestra lo pendiente.
+- **Una INE = una cuenta:** al aprobar una INE se captura la clave de elector; se guarda solo una huella (sha-256), nunca el número.
+- **Ajustes del 5 nov:** el seguimiento de la consulta va Confirmada → Llegó → Terminada (sin "En camino"); los nombres se guardan y se muestran sin "Dr./Dra." (también si alguien lo escribe); logo, corazón e íconos en SVG.
+- **Íconos de la app:** opción B (corazón con huella sobre lavanda) puesta de forma provisional mientras Kat elige. `icons/icon.svg` es el favicon; los PNG (Apple y Android) se generan desde ese SVG porque esas plataformas no aceptan SVG.
+
+## Qué había desde la fase 2
+- **Acceso:** entrar, crear cuenta (tutor o médico veterinario), recuperar y cambiar contraseña. El registro guarda los consentimientos (términos, WhatsApp, promociones) y el código de invitación.
+- **Armazón:** menú lateral en escritorio, menú de íconos en tableta y barra de pestañas abajo en celular. Tema automático, claro u oscuro.
+- **Inicio del tutor:** consulta del día, mascotas, próximas consultas, recordatorio de Lilie y avisos (urgencias y pagos solo en la app). Si aún no tiene mascotas, bienvenida con Liebe y Lilie.
+- **Hoy del médico veterinario:** consultas del día con su estado, alcaldía y horario, pagos retenidos y por depositar, y su semana. Sin personajes.
+- **Inicio del Panel:** cifras del día, cuentas por revisar, próximas consultas y el resumen del mes (cobrado, comisiones, pasarela y lo que queda a LilieVET).
+- **Las demás secciones** muestran qué tendrán y en qué fase llegan.
+- Si una cuenta admin también es médico veterinario, puede cambiar entre el Panel y su vista de médico.
+
+## Vista de muestra (sin conectar nada)
+Abre `index.html?demo=tutor`, `?demo=mvz`, `?demo=mvz-nuevo` (médico veterinario recién registrado, para probar el alta) o `?demo=admin`. En la muestra puedes subir fotos, enviar y aprobar; en el Panel, la clave `HRNDSF90010109M800` simula una INE que ya está en otra cuenta. Usa datos de ejemplo y no guarda nada. Sirve para revisar el diseño.
+
+## Conectar Supabase
+1. Crea un proyecto nuevo (región East US). En Database → Extensions activa **pg_cron**.
+2. SQL Editor → pega `supabase/schema.sql` completo → Run. Luego pega `supabase/fase3.sql` → Run. (Si ya habías corrido schema.sql, solo corre fase3.sql.)
+3. Authentication → Sign In / Providers → Email: apaga **Confirm email** (por ahora). En URL Configuration pon la dirección de la app en Site URL y Redirect URLs.
+4. Copia la Project URL y la clave publishable en `config.js`.
+5. Regístrate en la app y en SQL Editor corre: `select crear_admin('tu-correo');`. Recarga.
+
+## Publicar en GitHub Pages
+Sube todos los archivos a un repositorio, y en Settings → Pages elige la rama `main`. No hay que compilar nada.
+
+## Archivos
+| Carpeta | Qué es |
 | --- | --- |
-| `index.html` | La app completa (tutor, médico veterinario y Panel de LilieVET) |
-| `config.js` | Aquí pegas los 2 datos de tu proyecto de Supabase |
-| `supabase/schema.sql` | La base de datos: se pega una vez en Supabase |
-| `manifest.webmanifest`, `sw.js`, `icons/` | Para que se pueda instalar en el teléfono como app |
+| `ds/` | Sistema de diseño LilieVET v3, copiado tal cual (tokens, estilos y componentes). No se edita aquí: se actualiza desde el sistema de diseño. |
+| `css/app.css` | Solo el acomodo de la webapp (menú, rejillas, tablas). |
+| `js/` | La app: `main.js` (entrada), `api.js` (datos), `shell.js` (menú y rutas), `auth.js` (acceso), `componentes.js` (seguimiento, subir documentos), `cuenta.js` (datos y contraseña), `tutor/`, `mvz/` (`alta.js`), `admin/` (`verificacion.js`). |
+| `vendor/` | React 18, htm y Supabase JS, guardados en la app para no depender de otros servidores. |
+| `supabase/` | `schema.sql` (fase 1) y `fase3.sql` (cuentas y verificación), con sus pruebas: 70 de la fase 1 y 47 de la fase 3. |
+| `img/`, `icons/` | Logo y corazón con huella en SVG (los de Kat, sin cambios) e íconos de la app. |
 
----
+## Pruebas hechas (fase 3)
+- Base: 70 pruebas de la fase 1 (sobre schema.sql) y 47 de la fase 3 (schema.sql + fase3.sql) en Postgres 16. La prueba de "mismo día" de la fase 1 necesita correrse antes de las ~21:30 de CDMX (después ya no hay bloques ese día).
+- Navegador: subir INE y enviar (tutor), alta completa del médico veterinario, aprobar con clave, INE duplicada, corrección sin nota; capturas a 390, 900 y 1280 px en claro y oscuro. Sin errores de consola ni desbordes.
+- Falta probar contra un Supabase real (subidas a Storage, enlaces firmados y correos).
 
-## 1. Supabase (10 minutos)
-
-1. Entra a supabase.com y crea tu cuenta (puedes entrar con tu GitHub).
-2. **New project** → nombre `lilievet` → región **East US (North Virginia)** → guarda bien la contraseña de la base de datos.
-3. Menú **SQL Editor** → **New query** → pega TODO el contenido de `supabase/schema.sql` → **Run**. Debe decir *Success*.
-4. Menú **Authentication**:
-   - **Sign In / Providers → Email**: apaga **Confirm email**. Así la gente entra en cuanto se registra.
-     (Supabase solo manda correos a tu equipo hasta que conectes un servidor de correo propio; ver el paso 6.)
-   - **URL Configuration**: en **Site URL** pon la dirección donde quedará la app (paso 3), por ejemplo
-     `https://aegagrus97.github.io/lilievet/`, y agrégala también en **Redirect URLs**.
-5. Botón **Connect** (o **Project Settings → API Keys**): copia la **Project URL** y la clave **publishable**
-   (o "anon public"). **Nunca** copies la *secret* ni la *service_role*.
-
-## 2. config.js
-
-Abre `config.js` y reemplaza los dos valores:
-
-```js
-window.LV_CONFIG = {
-  supabaseUrl: 'https://xxxxxxxx.supabase.co',
-  supabaseKey: 'sb_publishable_xxxxxxxx',
-};
-```
-
-Esta clave sí puede ir en la app: las reglas de la base de datos deciden quién ve qué.
-
-## 3. Publicarla en GitHub Pages (gratis)
-
-1. En GitHub crea un repositorio nuevo, por ejemplo `lilievet` (público).
-2. **Add file → Upload files** → sube todo lo de esta carpeta (incluida la carpeta `icons`).
-3. **Settings → Pages** → *Source: Deploy from a branch* → rama `main`, carpeta `/ (root)` → **Save**.
-4. En 1 o 2 minutos queda en `https://aegagrus97.github.io/lilievet/`.
-
-Más adelante puedes conectar un dominio propio (por ejemplo lilievet.mx) en esa misma pantalla y ponerlo
-en el Panel → Parámetros → dominio, para que los links de invitación salgan con tu dominio.
-
-## 4. Tu cuenta de administradora
-
-1. Abre la app → **Soy veterinario** → crea tu cuenta con tus datos reales (cédula, INE, selfie).
-2. En Supabase → **SQL Editor** corre (con tu correo):
-   ```sql
-   select lv_make_admin('tu-correo@ejemplo.com');
-   ```
-3. Recarga la app: arriba aparece **Panel de LilieVET**. En **Revisiones** apruebas tu propia cuenta
-   y, desde ahí, las INE de los tutores, las cédulas de los médicos veterinarios y las cuentas CLABE.
-
-Si algún día quieres otra persona admin, repite el paso 2 con su correo.
-
-## 5. Cómo funciona por dentro (resumen)
-
-- El tutor ve solo lo suyo. El médico veterinario ve las consultas que le llegaron y el tutor y la mascota de
-  esas consultas (sin INE, tarjeta ni datos fiscales; el celular del tutor aparece solo con la visita aceptada).
-- Los perfiles de los médicos veterinarios son públicos, sin CLABE, RFC, INE ni cédula escaneada.
-- Tú (admin) ves todo para revisar. Aprobar una INE, una cédula o una CLABE solo lo puede hacer la cuenta admin:
-  si alguien lo intenta desde su teléfono, la base de datos lo regresa.
-- Los cambios llegan a los demás teléfonos en unos 10 segundos.
-- **Depósitos:** en Panel → Usuarios → MVZ → Acciones ves la CLABE y cuánto se le debe a cada uno.
-  Haces el SPEI desde tu banco y luego tocas **Registrar depósito** para que quede en su historial.
-
-## 6. Pendientes antes de abrirla al público
-
-1. **Pagos con Mercado Pago.** Hoy la app está en **modo de prueba**: muestra los montos y guarda los
-   movimientos, pero no cobra. Se ve el aviso "Modo de prueba" al pagar. Se conecta en la siguiente etapa.
-2. **Avisos al teléfono.** Por ahora los avisos llegan dentro de la app (y como notificación del sistema
-   mientras la app está abierta). Los médicos veterinarios deben revisarla seguido mientras estén disponibles.
-   Faltan avisos push o por WhatsApp.
-3. **Plazos de 1 hora cuando nadie tiene la app abierta.** El paso al siguiente médico veterinario de la
-   lista lo hace el teléfono de alguien involucrado. Durante el piloto, deja LilieVET abierta con tu cuenta admin
-   en una computadora en el horario de solicitudes (7:00 a 23:00): tu Panel procesa los plazos de todos.
-4. **Correo propio** (para "¿Olvidaste tu contraseña?"): conecta un servidor de correo como Brevo o Resend en
-   Authentication → Emails → SMTP Settings. Mientras no lo hagas, solo te llegan correos a ti y a tu equipo.
-5. **Plan Pro de Supabase (US$25 al mes)** cuando haya tutores reales: el plan gratis pausa el proyecto tras
-   una semana sin uso y no tiene copias de seguridad diarias.
-6. **Aviso de Privacidad:** que tu abogado agregue que los datos (incluidas las INE) se guardan en servidores
-   en Estados Unidos.
-
-## 7. Publicar una versión nueva
-
-Reemplaza `index.html` en GitHub y, en `sw.js`, sube el número de `VERSION` (por ejemplo `lilievet-1.0.1`)
-para que los teléfonos que ya la instalaron descarguen la nueva. Si cambia `supabase/schema.sql`, vuelve a
-correrlo completo en el SQL Editor: no borra datos.
+## Pruebas de la fase 2
+- Capturas a 390, 900 y 1280 px, en claro y oscuro, de las tres vistas, el acceso y las secciones pendientes. Sin errores de consola ni desbordes.
+- Modo Supabase con un servidor simulado: error de contraseña en español, inicio de sesión, carga del perfil y del Inicio del tutor sin mascotas.
+- Falta probarla contra un Supabase real.

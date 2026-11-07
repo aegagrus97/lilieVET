@@ -1,0 +1,108 @@
+/* LilieVET — generated from tokens.json */
+:root, [data-theme="light"] {
+  --surface: #ffffff;
+  --surface-soft: #f6f6ff;
+  --surface-raised: #ffffff;
+  --surface-deep: #0e0b17;
+  --on-deep: #ffffff;
+  --line: #dddae7;
+  --line-strong: #8d8a96;
+  --ink: #0e0b17;
+  --ink-muted: #595665;
+  --primary: #904d72;
+  --primary-hover: #833a64;
+  --on-primary: #ffffff;
+  --primary-soft: #ffe4f1;
+  --accent: #fd6d1f;
+  --on-accent: #0e0b17;
+  --accent-ink: #ba4902;
+  --brand-lavanda: #b9b4e8;
+  --brand-ciruela: #b46994;
+  --brand-rosa: #e8b9d4;
+  --success: #1e7a52;
+  --success-soft: #e6f5ee;
+  --danger: #b4233c;
+  --danger-soft: #fdecef;
+  --info: #574d8e;
+  --info-soft: #eceaff;
+  --focus-ring: #574d8e;
+  --lavanda-50: #f6f6ff;
+  --lavanda-100: #eceaff;
+  --lavanda-200: #dcd9f4;
+  --lavanda-300: #b9b4e8;
+  --lavanda-500: #8a80cb;
+  --lavanda-700: #574d8e;
+  --lavanda-900: #282344;
+  --ciruela-50: #fff3f9;
+  --ciruela-100: #ffe4f1;
+  --ciruela-300: #e8b9d4;
+  --ciruela-500: #b46994;
+  --ciruela-600: #904d72;
+  --ciruela-700: #833a64;
+  --ciruela-900: #3f1a2f;
+  --naranja-50: #fff4f0;
+  --naranja-300: #ffb292;
+  --naranja-500: #fd6d1f;
+  --naranja-600: #ba4902;
+  --neutral-50: #f7f5fe;
+  --neutral-100: #edebf8;
+  --neutral-200: #dddae7;
+  --neutral-300: #c8c5d2;
+  --neutral-500: #8d8a96;
+  --neutral-700: #595665;
+  --neutral-800: #403d4c;
+  --neutral-900: #2a2734;
+  --neutral-950: #0e0b17;
+  --shadow-sm: 0 1px 2px #0e0b1714, 0 2px 6px #0e0b170f;
+  --shadow-md: 0 4px 12px #0e0b171a, 0 12px 32px #904d7214;
+}
+[data-theme="dark"] {
+  --surface: #0e0b17;
+  --surface-soft: #1b1726;
+  --surface-raised: #221d30;
+  --surface-deep: #3f3768;
+  --line: #403d4c;
+  --ink: #f4f2fb;
+  --ink-muted: #c8c5d2;
+  --primary: #e8b9d4;
+  --primary-hover: #f3cfe2;
+  --on-primary: #0e0b17;
+  --primary-soft: #3b2233;
+  --accent: #ff834b;
+  --accent-ink: #ff834b;
+  --success: #6fcf9f;
+  --success-soft: #173326;
+  --danger: #ff8a9b;
+  --danger-soft: #3a1720;
+  --info: #b9b4e8;
+  --info-soft: #26213a;
+  --focus-ring: #b9b4e8;
+  --shadow-sm: 0 1px 3px #000000b3;
+  --shadow-md: 0 6px 20px #000000cc;
+}
+:root {
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+  --espacio-12: 48px;
+  --radio-sm: 8px;
+  --radio-md: 12px;
+  --radio-lg: 20px;
+  --radio-pill: 9999px;
+  --font-display: Marvin, Poppins, ui-sans-serif, system-ui, sans-serif;
+  --font-heading: Poppins, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+.display-marca { font-family: var(--font-display); font-size: 56px; line-height: 56px; font-weight: 400; }
+.titulo-1 { font-family: var(--font-heading); font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; }
+.titulo-2 { font-family: var(--font-heading); font-size: 22px; line-height: 28px; font-weight: 600; }
+.titulo-3 { font-family: var(--font-heading); font-size: 18px; line-height: 24px; font-weight: 600; }
+.boton { font-family: var(--font-heading); font-size: 16px; line-height: 20px; font-weight: 600; }
+.cuerpo-grande { font-family: var(--font-sans); font-size: 18px; line-height: 28px; font-weight: 400; }
+.cuerpo { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 400; }
+.cuerpo-medio { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 500; }
+.pequeno { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 400; }
+.etiqueta { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.02em; }

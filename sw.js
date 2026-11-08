@@ -1,31 +1,27 @@
-/* LilieVET · service worker: permite instalar la app y abrirla rápido.
-   Los datos (Supabase) nunca se guardan aquí: siempre se piden al servidor.
-   Al publicar una versión nueva, sube el número de VERSION para que los teléfonos la descarguen. */
-const VERSION = 'lilievet-1.0.1';
-const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
-
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+// LilieVET · service worker: guarda los archivos de la app para que abra rápido.
+// Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
+const VERSION = 'lv-fase3-1';
+const ARCHIVOS = [
+  './', 'index.html', 'config.js', 'manifest.webmanifest',
+  'ds/tokens.css', 'ds/bundle.css', 'ds/bundle.js', 'css/app.css',
+  'vendor/react.production.min.js', 'vendor/react-dom.production.min.js', 'vendor/htm.umd.js', 'vendor/supabase.js',
+  'js/main.js', 'js/lib.js', 'js/api.js', 'js/demo.js', 'js/shell.js', 'js/auth.js', 'js/secciones.js', 'js/componentes.js', 'js/cuenta.js',
+  'js/tutor/inicio.js', 'js/tutor/perfil.js', 'js/mvz/hoy.js', 'js/mvz/alta.js', 'js/admin/inicio.js', 'js/admin/verificacion.js',
+  'img/lilievet-logo.svg', 'img/lilievet-corazon.svg', 'icons/icon.svg', 'icons/favicon-32.png', 'icons/icon-192.png',
+];
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));
 });
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+self.addEventListener('activate', (e) => {
+  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
-self.addEventListener('fetch', e => {
-  const req = e.request, url = new URL(req.url);
-  if (req.method !== 'GET') return;
-  if (url.hostname.endsWith('supabase.co') || url.pathname.includes('/rest/') || url.pathname.includes('/auth/')) return; // datos: siempre en línea
-  const sameOrigin = url.origin === self.location.origin;
-  const isShell = sameOrigin && (req.mode === 'navigate' || /\/(index\.html|config\.js)?$/.test(url.pathname));
-  if (isShell) {
-    // Primero la red (para recibir versiones nuevas); si no hay internet, la copia guardada
-    e.respondWith(fetch(req).then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return res; })
-      .catch(() => caches.match(req).then(r => r || caches.match('index.html'))));
-    return;
-  }
-  if (sameOrigin || url.hostname === 'cdn.jsdelivr.net' || url.hostname.endsWith('gstatic.com') || url.hostname.endsWith('googleapis.com')) {
-    e.respondWith(caches.match(req).then(hit => {
-      const net = fetch(req).then(res => { if (res.ok || res.type === 'opaque') { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); } return res; }).catch(() => hit);
-      return hit || net;
-    }));
-  }
+self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+  if (e.request.method !== 'GET' || url.origin !== location.origin) return; // Supabase y fuentes: directo a la red
+  // Primero la red (para recibir cambios), y si no hay conexión, lo guardado
+  e.respondWith(fetch(e.request).then((r) => {
+    const copia = r.clone();
+    caches.open(VERSION).then((c) => c.put(e.request, copia));
+    return r;
+  }).catch(() => caches.match(e.request).then((r) => r || caches.match('index.html'))));
 });

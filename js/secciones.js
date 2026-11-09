@@ -8,7 +8,6 @@ const PLAN = {
     consultas: [6, 'Consultas', ['Próximas y pasadas', 'Chat con el médico veterinario', 'Cancelar (gratis hasta 24 horas antes)', 'Calificar la consulta']],
   },
   mvz: {
-    agenda: [5, 'Agenda', ['Alcaldía y horario por día', 'Bloques de 2 horas que se generan solos', 'Días bloqueados', 'Acepto consultas el mismo día (+40%)', 'Precios y catálogo de vacunas y desparasitantes', 'Consultas: “Llegué”, captura clínica y cierre']],
     pagos: [9, 'Pagos', ['Retenido, por depositar y depositado', 'Detalle por consulta con la comisión', 'Depósitos por SPEI', 'CLABE y datos fiscales']],
   },
   admin: {

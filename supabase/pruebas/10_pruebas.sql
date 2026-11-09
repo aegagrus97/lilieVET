@@ -230,8 +230,8 @@ select como('00000000-0000-0000-0000-0000000000b1');
 reset role;
 -- bloque de hoy para Kat (acepta mismo día): agenda del día de hoy
 insert into agenda_dias values ('00000000-0000-0000-0000-0000000000a1',
-  extract(isodow from (now() at time zone 'America/Mexico_City'))::smallint, 3, '00:00', '22:00')
-  on conflict (mvz_id, dia_semana) do update set hora_inicio = '00:00', hora_fin = '22:00';
+  extract(isodow from (now() at time zone 'America/Mexico_City'))::smallint, 3, '06:00', '22:00')
+  on conflict (mvz_id, dia_semana) do update set hora_inicio = '06:00', hora_fin = '22:00';
 set role authenticated;
 select como('00000000-0000-0000-0000-0000000000b1');
 select set_config('lv.hoy', (select inicia_at::text from bloques_disponibles(3::smallint, (now() at time zone 'America/Mexico_City')::date, 'vacunacion')

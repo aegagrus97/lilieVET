@@ -257,6 +257,38 @@ function supabaseApi() {
       };
     },
 
+    // ───────── Agenda del médico veterinario (fase 5) ─────────
+    async miAgenda() {
+      const yo = await uid();
+      const [dias, bloq, cat, alc, par] = await Promise.all([
+        sb.from('agenda_dias').select('dia_semana, alcaldia_id, hora_inicio, hora_fin').eq('mvz_id', yo).order('dia_semana'),
+        sb.from('dias_bloqueados').select('dia, motivo').eq('mvz_id', yo).gte('dia', hoyISO()).order('dia'),
+        sb.from('catalogo_mvz').select('id, tipo, nombre, especie, precio, activo').eq('mvz_id', yo).order('tipo').order('nombre'),
+        sb.from('alcaldias').select('id, nombre').order('nombre'),
+        sb.from('parametros').select('clave, valor')
+          .in('clave', ['horas_bloque', 'recargo_mismo_dia', 'comision', 'precio_min_general', 'precio_min_especialidad']),
+      ]);
+      return {
+        dias: ok(dias), bloqueados: ok(bloq), catalogo: ok(cat), alcaldias: ok(alc),
+        params: Object.fromEntries(ok(par).map((x) => [x.clave, Number(x.valor)])),
+      };
+    },
+    async consultasMvz(desde, hasta) { return ok(await sb.rpc('mis_consultas_mvz', { p_desde: desde, p_hasta: hasta })); },
+    // Toda la semana de una vez (todo o nada): los días que no vienen se quitan
+    async guardarHorario(filas) { ok(await sb.rpc('guardar_agenda', { p_dias: filas })); },
+    async bloquearDias(dias, motivo) {
+      const yo = await uid();
+      ok(await sb.from('dias_bloqueados').upsert(dias.map((dia) => ({ mvz_id: yo, dia, motivo: motivo || null })),
+        { onConflict: 'mvz_id,dia', ignoreDuplicates: true }));
+    },
+    async desbloquearDia(dia) { ok(await sb.from('dias_bloqueados').delete().eq('mvz_id', await uid()).eq('dia', dia)); },
+    async guardarProducto(id, d) {
+      if (id) { ok(await sb.from('catalogo_mvz').update(d).eq('id', id)); return; }
+      ok(await sb.from('catalogo_mvz').insert({ ...d, mvz_id: await uid() }));
+    },
+    // Devuelve 'borrado' o 'desactivado' (si ya se vendió en alguna consulta)
+    async quitarProducto(id) { return ok(await sb.rpc('quitar_producto', { p_id: id })); },
+
     async adminResumen() {
       const hoy = hoyISO();
       const ini = new Date(hoy + 'T00:00:00-06:00').toISOString();
@@ -300,6 +332,9 @@ export function traducir(e) {
     [/mime type .* is not supported|invalid_mime_type/i, 'Ese tipo de archivo no se acepta. Sube una foto JPG o PNG, o un PDF.'],
     [/duplicate key value violates unique constraint "perfiles_ine_huella_key"/i, 'Esta INE ya está registrada en otra cuenta.'],
     [/New email address should be different/i, 'Ese ya es tu correo.'],
+    [/mvz_precio_general_check/i, 'La consulta general cuesta al menos $500.'],
+    [/mvz_precio_especialidad_check/i, 'La consulta especializada cuesta al menos $1,000.'],
+    [/row-level security/i, 'No tienes permiso para hacer este cambio.'],
   ];
   const t = tabla.find(([re]) => re.test(m));
   const err = new Error(t ? t[1] : m);

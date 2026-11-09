@@ -1,7 +1,7 @@
 // Vista de muestra: datos de ejemplo para revisar el diseño sin conectar Supabase.
 // Se abre con index.html?demo=tutor, ?demo=mvz, ?demo=mvz-nuevo o ?demo=admin. Nada de esto se guarda:
 // al recargar la página vuelve a empezar.
-import { hoyISO, prepararArchivo, DOC, quitarTitulo, OBJETO_VERIF, armarVerif, ordenarCola, estadoCartilla } from './lib.js';
+import { hoyISO, prepararArchivo, DOC, quitarTitulo, OBJETO_VERIF, armarVerif, ordenarCola, estadoCartilla, diaSemana, isoDe, horaNum } from './lib.js';
 
 // Una fecha sin hora, a n días de hoy ("2026-03-04")
 const dia = (n) => {
@@ -108,6 +108,45 @@ export function demoApi(quien) {
   const buscarMascota = (id) => mascotas.find((m) => m.id === id) || falla('No encontramos esa mascota.');
   const conEstado = (m) => ({ ...m, foto: m.foto_path, cartillaEstado: estadoCartilla(m.cartilla) });
 
+  // Agenda de muestra del médico veterinario (fase 5): Coyoacán entre semana y Benito Juárez el sábado
+  const ALCALDIAS = ['Álvaro Obregón', 'Azcapotzalco', 'Benito Juárez', 'Coyoacán', 'Cuajimalpa de Morelos', 'Cuauhtémoc', 'Gustavo A. Madero',
+    'Iztacalco', 'Iztapalapa', 'La Magdalena Contreras', 'Miguel Hidalgo', 'Milpa Alta', 'Tláhuac', 'Tlalpan', 'Venustiano Carranza', 'Xochimilco']
+    .map((nombre, i) => ({ id: i + 1, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const PARAMS = { horas_bloque: 2, recargo_mismo_dia: 0.4, comision: 0.225, precio_min_general: 500, precio_min_especialidad: 1000 };
+  const conAgenda = quien === 'mvz' || quien === 'admin';
+  let agenda = conAgenda ? [1, 2, 3, 4, 5].map((d) => ({ dia_semana: d, alcaldia_id: 4, hora_inicio: '10:00:00', hora_fin: '18:00:00' }))
+    .concat([{ dia_semana: 6, alcaldia_id: 3, hora_inicio: '09:00:00', hora_fin: '13:00:00' }]) : [];
+  let bloqueados = conAgenda ? [{ dia: dia(16), motivo: 'Congreso de medicina felina' }] : [];
+  let catalogo = conAgenda ? [
+    { id: 'p1', tipo: 'vacuna', nombre: 'Séxtuple canina', especie: 'perro', precio: 480, activo: true },
+    { id: 'p2', tipo: 'vacuna', nombre: 'Triple felina', especie: 'gato', precio: 450, activo: true },
+    { id: 'p3', tipo: 'vacuna', nombre: 'Antirrábica', especie: null, precio: 300, activo: true },
+    { id: 'p4', tipo: 'desparasitante', nombre: 'Desparasitante interno', especie: null, precio: 180, activo: true },
+    { id: 'p5', tipo: 'desparasitante', nombre: 'Pipeta antipulgas', especie: 'perro', precio: 260, activo: false },
+  ] : [];
+  const vendidos = new Set(['p1', 'p5']); // ya se usaron en alguna consulta: al quitarlos se desactivan
+  // Consultas de muestra: siempre en el siguiente día hábil con horario, para que el calendario tenga algo
+  const proximoDia = (desde, dias) => { for (let n = desde; n < desde + 14; n++) if (dias.includes(diaSemana(dia(n)))) return n; return desde; };
+  const consultasDemo = (() => {
+    if (!conAgenda) return [];
+    const c = (id, folio, n, hh, estado, tipo, mascota_nombre, especie, colonia, motivo, tutor_nombre) =>
+      ({ id, folio, estado, tipo, inicia_at: h(n, hh), termina_at: h(n, hh + 2), alcaldia: 'Coyoacán', colonia, tutor_nombre, mascota_id: 'x' + id,
+        mascota_nombre, especie, motivo, total_mvz: tipo === 'vacunacion' ? 503.75 : 465, con_acceso: true });
+    const n1 = proximoDia(1, [1, 2, 3, 4, 5]);
+    const n2 = proximoDia(n1 + 1, [1, 2, 3, 4, 5]);
+    return [
+      c('c1', 1042, 0, 10, 'cerrada', 'general', 'Kira', 'perro', 'Del Carmen', 'Cojea de la pata trasera', 'Jorge'),
+      c('c2', 1047, 0, 12, 'confirmada', 'vacunacion', 'Luna', 'gato', 'Santa Catarina', 'Refuerzo de triple felina', 'Mariana'),
+      c('c3', 1051, 0, 16, 'confirmada', 'general', 'Max', 'perro', 'Villa Coyoacán', 'Vómito desde ayer', 'Sofía'),
+      c('c4', 1055, n1, 10, 'confirmada', 'general', 'Coco', 'perro', 'Ciudad Jardín', 'Se rasca mucho las orejas', 'Daniela'),
+      c('c5', 1058, n1, 14, 'confirmada', 'vacunacion', 'Mango', 'perro', 'Del Carmen', 'Séxtuple y desparasitación', 'Mariana'),
+      c('c6', 1060, n2, 12, 'confirmada', 'general', 'Nube', 'gato', 'Romero de Terreros', 'Dejó de comer', 'Andrés'),
+      c('c7', 1031, -3, 10, 'cerrada', 'general', 'Toby', 'perro', 'Copilco', 'Revisión general', 'Luis'),
+      c('c8', 1033, -3, 14, 'tutor_ausente', 'general', 'Pelusa', 'gato', 'Pedregal', 'Estornuda', 'Rocío'),
+    ];
+  })();
+  const activas = (iso) => consultasDemo.filter((c) => ['confirmada', 'en_domicilio'].includes(c.estado) && isoDe(c.inicia_at) === iso);
+
   let sesion = { user: { id: perfil.id, email: perfil.correo } };
   const subs = new Set();
   const avisar = () => subs.forEach((cb) => cb(sesion));
@@ -177,6 +216,8 @@ export function demoApi(quien) {
     async guardarMvz(d) {
       await espera(300);
       const x = perfil.extra;
+      if (d.precio_general != null && Number(d.precio_general) < 500) falla('La consulta general cuesta al menos $500.');
+      if (d.precio_especialidad != null && Number(d.precio_especialidad) < 1000) falla('La consulta especializada cuesta al menos $1,000.');
       if ('cedula' in d && d.cedula !== x.cedula && ['pendiente', 'en_revision', 'aprobado'].includes(x.estado)) falla('Tu cédula ya está en revisión o aprobada. Para cambiarla escribe a soporte.');
       if (['clabe', 'banco', 'titular_clabe'].some((k) => k in d && d[k] !== x[k])) x.estado_clabe = 'sin_enviar';
       if ('especialidad_id' in d && d.especialidad_id !== x.especialidad_id) x.estado_especialidad = 'sin_enviar';
@@ -254,6 +295,65 @@ export function demoApi(quien) {
           { id: 'c3', folio: 1051, estado: 'confirmada', tipo: 'general', inicia_at: h(0, 16), termina_at: h(0, 18), alcaldia: 'Coyoacán', colonia: 'Villa Coyoacán', tutor_nombre: 'Sofía', mascota_nombre: 'Max', especie: 'perro', motivo: 'Vómito desde ayer', total_mvz: 465, con_acceso: true },
         ],
       };
+    },
+
+    // ───────── Agenda del médico veterinario (fase 5) ─────────
+    async miAgenda() {
+      await espera();
+      const hoy = hoyISO();
+      return JSON.parse(JSON.stringify({ dias: agenda, bloqueados: bloqueados.filter((b) => b.dia >= hoy), catalogo, alcaldias: ALCALDIAS, params: PARAMS }));
+    },
+    async consultasMvz(desde, hasta) {
+      await espera(200);
+      return consultasDemo.filter((c) => { const d = isoDe(c.inicia_at); return d >= desde && d <= hasta; })
+        .sort((a, b) => a.inicia_at.localeCompare(b.inicia_at));
+    },
+    async guardarHorario(filas) {
+      await espera(400);
+      const quitar = agenda.map((a) => a.dia_semana).filter((d) => !filas.some((f) => f.dia_semana === d));
+      filas.forEach((f) => {
+        const [i, fi] = [horaNum(f.hora_inicio), horaNum(f.hora_fin)];
+        if (i < 6 || fi > 22) falla('Puedes atender entre las 6:00 y las 22:00');
+        if (fi - i < 2 || (fi - i) % 2) falla('El horario debe dar bloques completos de 2 horas');
+      });
+      // Igual que la base: no se puede dejar fuera una consulta ya pagada
+      const futuras = consultasDemo.filter((c) => ['confirmada', 'en_domicilio'].includes(c.estado) && new Date(c.termina_at) > new Date());
+      futuras.forEach((c) => {
+        const ds = diaSemana(isoDe(c.inicia_at));
+        const f = filas.find((x) => x.dia_semana === ds);
+        const antes = agenda.find((x) => x.dia_semana === ds);
+        const h0 = horaNum(new Date(c.inicia_at).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', hour12: false }));
+        const fuera = quitar.includes(ds) || (f && (f.alcaldia_id !== antes?.alcaldia_id || h0 < horaNum(f.hora_inicio) || h0 + 2 > horaNum(f.hora_fin)));
+        if (antes && fuera) {
+          falla(`Tienes una consulta ese día (la primera el ${isoDe(c.inicia_at).split('-').reverse().join('/')}) que ya no cabría. Cámbialo después de esa fecha o escribe a soporte`);
+        }
+      });
+      agenda = agenda.filter((a) => !quitar.includes(a.dia_semana) && !filas.some((f) => f.dia_semana === a.dia_semana))
+        .concat(filas.map((f) => ({ ...f, hora_inicio: f.hora_inicio + ':00', hora_fin: f.hora_fin + ':00' })))
+        .sort((a, b) => a.dia_semana - b.dia_semana);
+    },
+    async bloquearDias(dias, motivo) {
+      await espera(300);
+      const ocupado = dias.find((d) => activas(d).length);
+      if (ocupado) falla(`El ${ocupado.split('-').reverse().join('/')} tienes ${activas(ocupado).length} consultas agendadas. Para no dejar a nadie sin atención, escribe a soporte`);
+      if (dias.some((d) => d < hoyISO())) falla('Ese día ya pasó');
+      dias.forEach((d) => { if (!bloqueados.some((b) => b.dia === d)) bloqueados.push({ dia: d, motivo: (motivo || '').trim() || null }); });
+      bloqueados.sort((a, b) => a.dia.localeCompare(b.dia));
+    },
+    async desbloquearDia(d) { await espera(250); bloqueados = bloqueados.filter((b) => b.dia !== d); },
+    async guardarProducto(id, d) {
+      await espera(300);
+      const nombre = 'nombre' in d ? String(d.nombre || '').trim().replace(/\s+/g, ' ') : undefined;
+      if (nombre !== undefined && (nombre.length < 2 || nombre.length > 80)) falla('Escribe el nombre del producto (de 2 a 80 caracteres)');
+      if ('precio' in d && !(Number(d.precio) >= 1 && Number(d.precio) <= 20000)) falla('El precio debe estar entre $1 y $20,000');
+      if (id) Object.assign(catalogo.find((p) => p.id === id), d, nombre !== undefined ? { nombre } : {});
+      else catalogo.push({ id: 'p' + Date.now(), activo: true, ...d, nombre });
+    },
+    async quitarProducto(id) {
+      await espera(250);
+      if (vendidos.has(id)) { catalogo.find((p) => p.id === id).activo = false; return 'desactivado'; }
+      catalogo = catalogo.filter((p) => p.id !== id);
+      return 'borrado';
     },
 
     async adminResumen() {

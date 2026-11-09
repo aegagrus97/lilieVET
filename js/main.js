@@ -8,6 +8,7 @@ import { Mascotas } from './tutor/mascotas.js';
 import { PerfilTutor } from './tutor/perfil.js';
 import { HoyMvz } from './mvz/hoy.js';
 import { AltaMvz, PerfilMvz } from './mvz/alta.js';
+import { Agenda } from './mvz/agenda.js';
 import { InicioAdmin } from './admin/inicio.js';
 import { Verificacion } from './admin/verificacion.js';
 import { Proximamente, MasAdmin, tituloDe } from './secciones.js';
@@ -39,6 +40,7 @@ function Vista({ vista, seccion, sub, perfil, onPerfil, setConteos }) {
   if (vista === 'mvz') {
     if (seccion === 'hoy') return mvzAprobado(perfil) ? html`<${HoyMvz} perfil=${perfil} />` : html`<${AltaMvz} perfil=${perfil} onPerfil=${onPerfil} />`;
     if (seccion === 'perfil') return html`<${PerfilMvz} perfil=${perfil} onPerfil=${onPerfil} />`;
+    if (seccion === 'agenda') return html`<${Agenda} perfil=${perfil} onPerfil=${onPerfil} sub=${sub} />`;
     return html`<${Proximamente} vista="mvz" id=${seccion} />`;
   }
   if (seccion === 'inicio') return html`<${InicioAdmin} onConteos=${setConteos} />`;

@@ -240,3 +240,39 @@ export const ordenarCola = (cola) => [...cola].sort((a, b) =>
   (a.proxima_consulta ? 0 : 1) - (b.proxima_consulta ? 0 : 1)
   || new Date(a.proxima_consulta || a.enviado_at) - new Date(b.proxima_consulta || b.enviado_at));
 
+
+// ───────── Agenda del médico veterinario (fase 5) ─────────
+// CDMX no cambia de horario desde 2022: siempre UTC-6.
+export const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+export const DIAS_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const partes = (iso) => String(iso).split('-').map(Number);
+export const sumarDias = (iso, n) => { const [y, m, d] = partes(iso); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
+// 1 = lunes … 7 = domingo (igual que isodow en la base)
+export const diaSemana = (iso) => { const [y, m, d] = partes(iso); return ((new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7) + 1; };
+export const lunesDe = (iso) => sumarDias(iso, 1 - diaSemana(iso));
+export const hhmm = (t) => String(t || '').slice(0, 5);
+export const horaNum = (t) => Number(String(t || '').slice(0, 2));
+export const dosDig = (n) => String(n).padStart(2, '0');
+export const instante = (iso, hora) => new Date(`${iso}T${hhmm(hora)}:00-06:00`);
+// Fecha (sin hora) en CDMX de un instante
+export const isoDe = (d) => fmt({ year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(d)).split('/').reverse().join('-');
+export const numDia = (iso) => partes(iso)[2];
+export const mesCorto = (iso) => { const [y, m, d] = partes(iso); return fmt({ month: 'short' }).format(new Date(Date.UTC(y, m - 1, d, 12))).replace('.', ''); };
+
+// Bloques de un día según su horario: [{ ini, fin, desde: '09:00', hasta: '11:00' }]
+export function bloquesDelDia(iso, conf, horasBloque = 2) {
+  if (!conf) return [];
+  const out = [];
+  for (let h = horaNum(conf.hora_inicio); h + horasBloque <= horaNum(conf.hora_fin); h += horasBloque) {
+    const desde = dosDig(h) + ':00', hasta = dosDig(h + horasBloque) + ':00';
+    out.push({ ini: instante(iso, desde), fin: instante(iso, hasta), desde, hasta });
+  }
+  return out;
+}
+export const nBloques = (ini, fin, horasBloque = 2) => Math.max(0, Math.floor((horaNum(fin) - horaNum(ini)) / horasBloque));
+// Lo que recibe el médico de un precio (la comisión se cobra sobre todo)
+export const recibe = (precio, comision) => Math.round(Number(precio) * (1 - Number(comision)) * 100) / 100;
+export const TIPO_PRODUCTO = { vacuna: 'Vacuna', desparasitante: 'Desparasitante' };
+export const ESPECIE_PRODUCTO = { '': 'Perros y gatos', perro: 'Perros', gato: 'Gatos' };
+// Estados de reserva que ocupan el bloque en la agenda del médico
+export const OCUPA_BLOQUE = new Set(['confirmada', 'en_domicilio', 'cerrada', 'tutor_ausente', 'mvz_no_llego']);

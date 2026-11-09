@@ -339,7 +339,7 @@ function EstadoSolicitud({ perfil, onCorregir }) {
     <section class="box box-tight soon">
       <${Icon} name="info" />
       <div><b class="small">Cuando te aprobemos</b>
-        <ul class="small"><li>Configuras tu alcaldía, horario y precios (fase 5).</li><li>Tus bloques de 2 horas aparecen a los tutores de tu alcaldía.</li></ul></div>
+        <ul class="small"><li>Configuras tu alcaldía, horario y precios en Agenda (puedes hacerlo desde ya).</li><li>Tus bloques de 2 horas aparecen a los tutores de tu alcaldía.</li></ul></div>
     </section>
   </div>`;
 }
@@ -377,10 +377,18 @@ export function PerfilMvz({ perfil, onPerfil }) {
       </div>
       <aside class="stack" aria-label="Acceso y lo que viene">
         <${CambiarAccesoMvz} perfil=${perfil} />
+        <section class="box box-tight">
+          <div class="box-head" style=${{ marginBottom: 'var(--espacio-2)' }}><h2>Agenda y precios</h2></div>
+          <p class="small muted">Tu alcaldía y horario por día, precios de consulta, consultas del mismo día y tu catálogo de vacunas y desparasitantes.</p>
+          <div class="row" style=${{ marginTop: 'var(--espacio-3)' }}>
+            <${DS.Button} size="sm" variant="secondary" onClick=${() => ir('agenda/horario')}>Horario<//>
+            <${DS.Button} size="sm" variant="secondary" onClick=${() => ir('agenda/precios')}>Precios y catálogo<//>
+          </div>
+        </section>
         <section class="box box-tight soon">
           <${Icon} name="info" />
-          <div><b class="small">Llegan después</b>
-            <ul class="small"><li>Alcaldía, horario y precios (fase 5)</li><li>Catálogo de vacunas y desparasitantes (fase 5)</li><li>Datos fiscales (fase 9)</li></ul></div>
+          <div><b class="small">Llega después</b>
+            <ul class="small"><li>Datos fiscales (fase 9)</li></ul></div>
         </section>
       </aside>
     </div>

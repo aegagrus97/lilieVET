@@ -299,3 +299,92 @@ a { color: var(--primary); }
 .ficha-head > .stack-sm { flex: 1; min-width: 200px; }
 .page-ficha details > summary { cursor: pointer; width: fit-content; }
 .page-ficha details > summary::-webkit-details-marker { display: none; }
+
+/* ───────── Agenda del médico veterinario (fase 5) ───────── */
+.cal-head { flex-wrap: wrap; }
+.cal-nav { gap: var(--espacio-2); }
+.cal-flecha { width: 44px; padding: 0; }
+.cal-flecha:disabled { opacity: .4; cursor: default; }
+.flip { display: inline-flex; transform: scaleX(-1); }
+.semana { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--espacio-2); transition: opacity var(--lv-fast) var(--lv-ease); }
+.semana.cargando { opacity: .55; }
+.cal-dia { display: flex; flex-direction: column; gap: var(--espacio-2); min-width: 0; padding: var(--espacio-2); border-radius: var(--radio-md); background: var(--surface-soft); border: 1px solid transparent; }
+.cal-dia.es-hoy { border-color: var(--primary); background: var(--surface-raised); }
+.cal-dia.pasado { opacity: .7; }
+.cal-dia-head { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cal-fecha { display: flex; align-items: baseline; gap: var(--espacio-1); flex-wrap: wrap; }
+.cal-fecha b { font: 600 20px/26px var(--font-heading); }
+.cal-fecha .lv-badge { align-self: center; }
+.cal-donde { font-weight: 500; overflow-wrap: anywhere; }
+.cal-bloques { display: flex; flex-direction: column; gap: var(--espacio-1); }
+.cal-nota { padding: var(--espacio-1) 0; }
+.blk { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-raised); min-width: 0; font-size: 13px; line-height: 18px; }
+.blk .small { font-size: 12px; line-height: 16px; overflow-wrap: anywhere; }
+.blk b { font: 600 14px/18px var(--font-heading); overflow-wrap: anywhere; }
+.blk .lv-badge { align-self: flex-start; margin-top: 2px; max-width: 100%; font-size: 12px; line-height: 16px; padding: 2px 8px; white-space: normal; }
+.blk .lv-badge svg { display: none; }
+.blk .lv-badge { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; padding: 1px 6px; }
+.blk-h { font-weight: 600; }
+.blk-libre { border-color: var(--success); background: var(--success-soft); color: var(--success); }
+.blk-libre .blk-h { color: var(--ink); }
+.blk-res { border-color: var(--primary); }
+.blk-off { color: var(--ink-muted); background: transparent; border-style: dashed; }
+.cal-dia-pie { margin-top: auto; padding-top: var(--espacio-1); display: flex; flex-direction: column; gap: 2px; }
+.cal-dia-pie .linkish { font-size: 13px; align-self: flex-start; }
+.leyenda { display: flex; gap: var(--espacio-4); flex-wrap: wrap; margin-top: var(--espacio-3); }
+.leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.ley { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--line); display: inline-block; }
+.ley-libre { background: var(--success-soft); border-color: var(--success); }
+.ley-res { background: var(--surface-raised); border-color: var(--primary); }
+.ley-off { border-style: dashed; }
+
+/* Horario semanal */
+.horario { display: flex; flex-direction: column; }
+.hor-fila { display: grid; grid-template-columns: 140px minmax(0, 1.6fr) 96px 96px; gap: var(--espacio-2) var(--espacio-3); align-items: end; padding: var(--espacio-3) 0; border-bottom: 1px solid var(--line); }
+.hor-fila:last-child { border-bottom: 0; }
+.hor-fila.off { align-items: center; }
+.hor-fila .lv-field { max-width: none; }
+.hor-dia { align-self: center; min-height: 44px; align-items: center; }
+.hor-fila:not(.off) .hor-dia { align-self: end; }
+.hor-res { grid-column: 2 / -1; display: flex; justify-content: space-between; gap: var(--espacio-3); flex-wrap: wrap; }
+.hor-no { grid-column: 2 / -1; }
+
+/* Días bloqueados */
+.dia-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--radio-pill); border: 1px solid var(--line-strong); background: var(--surface-raised); color: var(--ink); font: 500 13px/18px var(--font-sans); cursor: pointer; }
+.dia-chip:hover { background: var(--surface-soft); }
+.dia-chip .lv-i { width: 14px; height: 14px; }
+
+/* Catálogo */
+.cat-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cat-lista > li { padding: var(--espacio-3) 0; border-bottom: 1px solid var(--line); }
+.cat-lista > li:last-child { border-bottom: 0; }
+.cat-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--espacio-2) var(--espacio-4); align-items: center; }
+.cat-item.off .cat-txt, .cat-item.off .cat-precio { opacity: .6; }
+.cat-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cat-txt b { font: 600 15px/20px var(--font-heading); }
+.cat-precio { display: flex; flex-direction: column; align-items: flex-end; }
+.cat-acc { display: flex; gap: 0; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.cat-acc .lv-btn { padding-left: var(--espacio-2); padding-right: var(--espacio-2); }
+.cat-form { padding: var(--espacio-4); border: 1px solid var(--primary); border-radius: var(--radio-md); margin-bottom: var(--espacio-3); }
+.cat-lista .cat-form { margin-bottom: 0; }
+
+/* Tableta y celular: la semana se vuelve lista de días */
+@media (max-width: 1100px) {
+  .semana { grid-template-columns: minmax(0, 1fr); }
+  .cal-dia { display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: start; padding: var(--espacio-3); }
+  .cal-bloques { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .cal-dia-pie { grid-column: 2; }
+}
+@media (max-width: 767px) {
+  .cal-dia { grid-template-columns: minmax(0, 1fr); }
+  .cal-dia-head { flex-direction: row; justify-content: space-between; align-items: baseline; gap: var(--espacio-2); }
+  .cal-bloques { grid-template-columns: 1fr 1fr; }
+  .cal-dia-pie { grid-column: 1; }
+  .hor-fila { grid-template-columns: 1fr 1fr; }
+  .hor-dia, .hor-alc, .hor-res, .hor-no { grid-column: 1 / -1; }
+  .hor-fila.off { grid-template-columns: 1fr auto; }
+  .hor-fila.off .hor-dia { grid-column: 1; }
+  .hor-fila.off .hor-no { grid-column: 2; }
+  .cat-item { grid-template-columns: minmax(0, 1fr) auto; }
+  .cat-acc { grid-column: 1 / -1; justify-content: flex-start; margin-left: calc(var(--espacio-2) * -1); }
+}

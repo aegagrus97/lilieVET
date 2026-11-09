@@ -1,6 +1,6 @@
 // LilieVET · service worker: guarda los archivos de la app para que abra rápido.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
-const VERSION = 'lv-fase4-1';
+const VERSION = 'lv-fase4-2';
 const ARCHIVOS = [
   './', 'index.html', 'config.js', 'manifest.webmanifest',
   'ds/tokens.css', 'ds/bundle.css', 'ds/bundle.js', 'css/app.css',

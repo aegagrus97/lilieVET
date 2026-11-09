@@ -169,12 +169,12 @@ function supabaseApi() {
         sb.rpc('historia_clinica', { p_mascota: id }),
       ]);
       const mm = ok(m), ds = ok(docs);
-      const urls = await urlsExpediente([mm.foto_path, ...ds.map((d) => sinDeposito(d.ruta))], 3600);
+      const urls = await urlsExpediente([mm.foto_path], 3600);
       return {
         ...mm,
         foto: urls[mm.foto_path] || null,
         cartilla: ok(cart),
-        documentos: ds.map((d) => ({ ...d, url: urls[sinDeposito(d.ruta)] || null, mio: d.subido_por === yo })),
+        documentos: ds.map((d) => ({ ...d, mio: d.subido_por === yo })),
         historia: ok(hist),
         cartillaEstado: estadoCartilla(ok(cart)),
       };
@@ -206,6 +206,10 @@ function supabaseApi() {
       ok(await sb.storage.from('expediente').upload(ruta, f, { contentType: f.type || 'image/jpeg', upsert: false }));
       return ok(await sb.from('documentos_mascota')
         .insert({ mascota_id: mascotaId, tipo, titulo, ruta: 'expediente/' + ruta }).select('*').single());
+    },
+    // Enlace recién firmado, para que el documento siempre abra
+    async abrirDocumentoMascota(ruta) {
+      return ok(await sb.storage.from('expediente').createSignedUrl(sinDeposito(ruta), 120)).signedUrl;
     },
 
     async tutorInicio() {

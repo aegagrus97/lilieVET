@@ -365,52 +365,83 @@ function Cartilla({ m, onCambio }) {
 }
 
 // ───────── Documentos ─────────
+const pesoLegible = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
+
 function Documentos({ m, onCambio }) {
   const toast = useToast();
   const [tipo, setTipo] = useState('laboratorio');
   const [titulo, setTitulo] = useState('');
-  const [estado, setEstado] = useState('');
+  const [archivo, setArchivo] = useState(null);
+  const [envio, correr] = useEnvio();
+  const [errorAbrir, setErrorAbrir] = useState(null);
 
-  const elegir = async (ev) => {
-    const file = ev.target.files && ev.target.files[0];
+  const elegir = (ev) => {
+    const f = ev.target.files && ev.target.files[0];
     ev.target.value = '';
-    if (!file) return;
-    setEstado('subiendo');
-    try {
-      await api.subirDocumentoMascota(m.id, { tipo, titulo: titulo.trim() || DOC_MASCOTA[tipo] }, file);
-      setEstado(''); setTitulo('');
+    if (f) setArchivo(f);
+  };
+
+  const subir = async () => {
+    if (await correr(() => api.subirDocumentoMascota(m.id, { tipo, titulo: titulo.trim() || DOC_MASCOTA[tipo] }, archivo))) {
       toast('Subimos el documento.');
+      setArchivo(null); setTitulo('');
       onCambio();
-    } catch (e) { setEstado(e.message || 'No se pudo subir.'); }
+    }
+  };
+
+  // El enlace se pide en el momento de abrir, así nunca se vence.
+  // La pestaña se abre antes de pedirlo para que el navegador no la bloquee.
+  const abrir = async (d) => {
+    setErrorAbrir(null);
+    const pestana = window.open('', '_blank');
+    try {
+      const url = await api.abrirDocumentoMascota(d.ruta);
+      if (pestana) pestana.location.href = url; else window.location.href = url;
+    } catch (e) {
+      if (pestana) pestana.close();
+      setErrorAbrir('No pudimos abrir ese documento. Intenta de nuevo.');
+    }
   };
 
   return html`<${Seccion} id="documentos" titulo="Documentos" sub="Estudios, recetas y la cartilla física.">
     <div class="stack">
-      <div class="field-row">
-        <${DS.Field} label="Tipo" as="select" value=${tipo} onChange=${(e) => setTipo(e.target.value)}
-          options=${Object.entries(DOC_MASCOTA).map(([value, label]) => ({ value, label }))} />
-        <${DS.Field} label="Nombre (opcional)" value=${titulo} onChange=${(e) => setTitulo(e.target.value)} hint="Por ejemplo: “Biometría de marzo”." />
-      </div>
       <div class="row">
-        <label class="lv-btn lv-btn-secondary lv-btn-sm foto-btn">
-          <input class="sr-only" type="file" accept="image/*,application/pdf" onChange=${elegir} disabled=${estado === 'subiendo'} />
-          ${estado === 'subiendo' ? 'Subiendo…' : 'Subir archivo'}
+        <label class="lv-btn lv-btn-ghost lv-btn-sm foto-btn">
+          <input class="sr-only" type="file" accept="image/*,application/pdf" onChange=${elegir} disabled=${envio.enviando} />
+          ${archivo ? 'Cambiar archivo' : 'Elegir archivo'}
         </label>
-        <span class="small muted">Foto o PDF, hasta 10 MB.</span>
+        ${archivo
+          ? html`<span class="small"><b>${archivo.name}</b> <span class="muted">· ${pesoLegible(archivo.size)}</span></span>`
+          : html`<span class="small muted">Foto o PDF, hasta 10 MB.</span>`}
       </div>
-      ${estado && estado !== 'subiendo' && html`<span class="small doc-error" role="alert">${estado}</span>`}
+
+      ${archivo && html`<div class="stack">
+        <div class="field-row">
+          <${DS.Field} label="Tipo" as="select" value=${tipo} onChange=${(e) => setTipo(e.target.value)}
+            options=${Object.entries(DOC_MASCOTA).map(([value, label]) => ({ value, label }))} />
+          <${DS.Field} label="Nombre (opcional)" value=${titulo} onChange=${(e) => setTitulo(e.target.value)}
+            hint="Por ejemplo: “Biometría de marzo”." />
+        </div>
+        ${envio.error && html`<${DS.Notice} tone="error">${envio.error}<//>`}
+        <div class="row">
+          <${DS.Button} size="sm" onClick=${subir} disabled=${envio.enviando}>${envio.enviando ? 'Subiendo…' : 'Subir documento'}<//>
+          <${DS.Button} variant="ghost" size="sm" onClick=${() => setArchivo(null)} disabled=${envio.enviando}>Cancelar<//>
+        </div>
+      </div>`}
+
+      ${errorAbrir && html`<span class="small doc-error" role="alert">${errorAbrir}</span>`}
 
       ${m.documentos.length
         ? html`<ul class="hist">${m.documentos.map((d) => html`<li key=${d.id}>
             <div class="spread">
               <b>${d.titulo}</b>
-              ${d.url && html`<a class="linkish" href=${d.url} target="_blank" rel="noopener">Abrir</a>`}
+              <button type="button" class="linkish" onClick=${() => abrir(d)}>Abrir</button>
             </div>
             <span class="small muted">${DOC_MASCOTA[d.tipo]} · ${fechaDia(d.created_at.slice(0, 10))}${d.mio ? '' : ' · lo subió tu médico veterinario'}</span>
           </li>`)}</ul>`
-        : html`<div class="vacio"><${Icon} name="doc" /><div><b class="small">Sin documentos.</b>
+        : !archivo && html`<div class="vacio"><${Icon} name="doc" /><div><b class="small">Sin documentos.</b>
             <p class="small muted">Sube su cartilla física, estudios de laboratorio o recetas anteriores.</p></div></div>`}
-      ${m.documentos.length > 0 && html`<p class="small muted">Por seguridad, los enlaces duran 10 minutos. Recarga la página para abrirlos de nuevo.</p>`}
+      ${m.documentos.length > 0 && html`<p class="small muted">Estos documentos son privados: solo tú y el médico veterinario que atiende a ${m.nombre} pueden abrirlos.</p>`}
     </div>
   <//>`;
 }

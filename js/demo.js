@@ -18,13 +18,17 @@ const espera = (ms = 250) => new Promise((r) => setTimeout(r, ms));
 const falla = (msg) => { throw new Error(msg); };
 
 // Imagen gris de ejemplo con una etiqueta: no imita ningún documento real
-function ejemplo(texto, ancho = 640, alto = 400) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}">
+function svgEjemplo(texto, ancho = 640, alto = 400) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}">
     <rect width="100%" height="100%" rx="18" fill="#EDEAF7"/><rect x="14" y="14" width="${ancho - 28}" height="${alto - 28}" rx="12" fill="none" stroke="#B9B4E8" stroke-width="3" stroke-dasharray="10 8"/>
     <text x="50%" y="46%" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="600" fill="#5B5675">Archivo de ejemplo</text>
     <text x="50%" y="58%" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="22" fill="#5B5675">${texto}</text></svg>`;
-  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
+function ejemplo(texto, ancho = 640, alto = 400) {
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgEjemplo(texto, ancho, alto));
+}
+// Igual, pero como archivo: así se puede abrir en otra pestaña
+const ejemploArchivo = (texto) => URL.createObjectURL(new Blob([svgEjemplo(texto)], { type: 'image/svg+xml' }));
 
 const PERFILES = {
   tutor: { id: 'demo-tutor', rol: 'tutor', es_admin: false, nombre: 'Mariana', apellidos: 'López', correo: 'mariana@ejemplo.mx', telefono: '5511223344',
@@ -89,7 +93,7 @@ export function demoApi(quien) {
         { id: 'c1', tipo: 'vacuna', producto: 'Triple felina', aplicada_el: dia(-356), proxima_el: dia(9), lote: 'A-4471', caducidad: dia(240), origen: 'mvz' },
         { id: 'c2', tipo: 'desparasitacion', producto: 'Desparasitación interna', aplicada_el: dia(-95), proxima_el: dia(85), lote: null, caducidad: null, origen: 'tutor' },
       ],
-      documentos: [{ id: 'd1', tipo: 'laboratorio', titulo: 'Biometría hemática', created_at: antes(40 * 1440), url: ejemplo('Biometría hemática'), mio: true }],
+      documentos: [{ id: 'd1', tipo: 'laboratorio', titulo: 'Biometría hemática', created_at: antes(40 * 1440), ruta: ejemploArchivo('Biometría hemática'), mio: true }],
       historia: [{ reserva_id: 'r0', fecha: antes(40 * 1440), tipo: 'general', motivo: 'Comía menos de lo normal', version: 1,
         peso_kg: 4.1, temperatura_c: 38.6, valoracion: 'Alerta y bien hidratada. Sarro leve en los molares superiores.',
         diagnosticos: 'Gingivitis leve.', indicaciones: 'Alimento húmedo durante cinco días.',
@@ -213,11 +217,11 @@ export function demoApi(quien) {
     async subirDocumentoMascota(id, { tipo, titulo }, file) {
       const f = await prepararArchivo(file, { pdf: true });
       await espera();
-      const doc = { id: 'd-nuevo-' + ++nuevoId, tipo, titulo, created_at: new Date().toISOString(), mio: true,
-        url: f.type === 'application/pdf' ? null : URL.createObjectURL(f) };
+      const doc = { id: 'd-nuevo-' + ++nuevoId, tipo, titulo, created_at: new Date().toISOString(), mio: true, ruta: URL.createObjectURL(f) };
       buscarMascota(id).documentos.unshift(doc);
       return doc;
     },
+    async abrirDocumentoMascota(ruta) { await espera(150); return ruta; },
 
     async tutorInicio() {
       await espera();

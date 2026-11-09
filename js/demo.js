@@ -1,7 +1,13 @@
 // Vista de muestra: datos de ejemplo para revisar el diseño sin conectar Supabase.
 // Se abre con index.html?demo=tutor, ?demo=mvz, ?demo=mvz-nuevo o ?demo=admin. Nada de esto se guarda:
 // al recargar la página vuelve a empezar.
-import { hoyISO, prepararArchivo, DOC, quitarTitulo, OBJETO_VERIF, armarVerif, ordenarCola } from './lib.js';
+import { hoyISO, prepararArchivo, DOC, quitarTitulo, OBJETO_VERIF, armarVerif, ordenarCola, estadoCartilla } from './lib.js';
+
+// Una fecha sin hora, a n días de hoy ("2026-03-04")
+const dia = (n) => {
+  const [y, m, d] = hoyISO().split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
 
 const h = (dias, hh, mm = 0) => {
   const [y, m, d] = hoyISO().split('-').map(Number);
@@ -71,6 +77,32 @@ export function demoApi(quien) {
     { id: 'h3', cuenta_id: 'c-luis', objeto: 'alta_mvz', decision: 'info_requerida', nota: 'La foto de la cédula está cortada. Súbela completa.', created_at: antes(2 * 1440), cuenta: { nombre: 'Luis', apellidos: 'Pérez Gómez', rol: 'mvz' } },
   ];
   const huellas = new Map([['HRNDSF90010109M800', 'c-otra']]); // una INE ya registrada, para probar el aviso
+
+  // Mascotas de muestra (fase 4). Se pueden editar aquí mismo; al recargar vuelven a empezar.
+  let nuevoId = 0;
+  const mascotas = [
+    { id: 'm1', nombre: 'Luna', especie: 'gato', raza: 'Doméstico de pelo corto', sexo: 'hembra', esterilizado: true,
+      fecha_nacimiento: null, edad_aprox_meses: 38, peso_kg: 4.2, senas: 'Blanca con manchas grises y un lunar en la nariz.',
+      foto_path: null, alergias: 'Ninguna conocida', enfermedades: null, antecedentes: 'La esterilizaron a los 8 meses.',
+      tratamientos_previos: null, medicamentos_actuales: null, notas_tutor: 'Se esconde cuando llegan visitas. Dale unos minutos.',
+      cartilla: [
+        { id: 'c1', tipo: 'vacuna', producto: 'Triple felina', aplicada_el: dia(-356), proxima_el: dia(9), lote: 'A-4471', caducidad: dia(240), origen: 'mvz' },
+        { id: 'c2', tipo: 'desparasitacion', producto: 'Desparasitación interna', aplicada_el: dia(-95), proxima_el: dia(85), lote: null, caducidad: null, origen: 'tutor' },
+      ],
+      documentos: [{ id: 'd1', tipo: 'laboratorio', titulo: 'Biometría hemática', created_at: antes(40 * 1440), url: ejemplo('Biometría hemática'), mio: true }],
+      historia: [{ reserva_id: 'r0', fecha: antes(40 * 1440), tipo: 'general', motivo: 'Comía menos de lo normal', version: 1,
+        peso_kg: 4.1, temperatura_c: 38.6, valoracion: 'Alerta y bien hidratada. Sarro leve en los molares superiores.',
+        diagnosticos: 'Gingivitis leve.', indicaciones: 'Alimento húmedo durante cinco días.',
+        tratamientos: null, recomendaciones: 'Limpieza dental en los próximos seis meses.', seguimiento: 'Revisión en un mes.', medico: 'Ana Ruiz' }] },
+    { id: 'm2', nombre: 'Mango', especie: 'perro', raza: 'Mestizo', sexo: 'macho', esterilizado: false,
+      fecha_nacimiento: dia(-1950), edad_aprox_meses: null, peso_kg: 12.8, senas: 'Café claro, orejas paradas.',
+      foto_path: null, alergias: null, enfermedades: null, antecedentes: null, tratamientos_previos: null,
+      medicamentos_actuales: null, notas_tutor: null,
+      cartilla: [{ id: 'c3', tipo: 'vacuna', producto: 'Rabia', aplicada_el: dia(-400), proxima_el: dia(-35), lote: null, caducidad: null, origen: 'tutor' }],
+      documentos: [], historia: [] },
+  ];
+  const buscarMascota = (id) => mascotas.find((m) => m.id === id) || falla('No encontramos esa mascota.');
+  const conEstado = (m) => ({ ...m, foto: m.foto_path, cartillaEstado: estadoCartilla(m.cartilla) });
 
   let sesion = { user: { id: perfil.id, email: perfil.correo } };
   const subs = new Set();
@@ -152,22 +184,56 @@ export function demoApi(quien) {
     async invitaciones() { await espera(200); return { registradas: 2, activadas: 1, saldo: 0, retenido: 100 }; },
 
     // ───────── Inicio de cada vista ─────────
+    // ───────── Mascotas (fase 4) ─────────
+    async mascotas() { await espera(); return mascotas.map(conEstado); },
+    async mascota(id) { await espera(); return conEstado(buscarMascota(id)); },
+    async guardarMascota(id, d) {
+      await espera();
+      if (id) { Object.assign(buscarMascota(id), d); return id; }
+      const nueva = { id: 'm-nueva-' + ++nuevoId, foto_path: null, cartilla: [], documentos: [], historia: [], ...d };
+      mascotas.push(nueva);
+      return nueva.id;
+    },
+    async borrarMascota(id) { await espera(); mascotas.splice(mascotas.findIndex((m) => m.id === id), 1); },
+    async subirFotoMascota(id, file) {
+      const f = await prepararArchivo(file, { pdf: false });
+      await espera();
+      buscarMascota(id).foto_path = URL.createObjectURL(f);
+    },
+    async agregarCartilla(id, d) {
+      await espera();
+      const fila = { id: 'c-nueva-' + ++nuevoId, origen: 'tutor', ...d };
+      buscarMascota(id).cartilla.unshift(fila);
+      return fila;
+    },
+    async borrarCartilla(idFila) {
+      await espera();
+      mascotas.forEach((m) => { m.cartilla = m.cartilla.filter((c) => c.id !== idFila); });
+    },
+    async subirDocumentoMascota(id, { tipo, titulo }, file) {
+      const f = await prepararArchivo(file, { pdf: true });
+      await espera();
+      const doc = { id: 'd-nuevo-' + ++nuevoId, tipo, titulo, created_at: new Date().toISOString(), mio: true,
+        url: f.type === 'application/pdf' ? null : URL.createObjectURL(f) };
+      buscarMascota(id).documentos.unshift(doc);
+      return doc;
+    },
+
     async tutorInicio() {
       await espera();
-      const mascotas = [
-        { id: 'm1', nombre: 'Luna', especie: 'gato', raza: 'Doméstico de pelo corto', sexo: 'hembra', edad_aprox_meses: 38 },
-        { id: 'm2', nombre: 'Mango', especie: 'perro', raza: 'Mestizo', sexo: 'macho', edad_aprox_meses: 64, vacunaVencida: true },
-      ];
+      const ms = mascotas.map(conEstado);
+      const proxima = mascotas.flatMap((m) => m.cartilla.filter((c) => c.proxima_el >= hoyISO()).map((c) => ({ ...c, mascota: m })))
+        .sort((a, b) => a.proxima_el.localeCompare(b.proxima_el))[0] || null;
       return {
-        mascotas,
+        mascotas: ms,
         proximas: [{
           id: 'r1', estado: 'confirmada', tipo: 'general', inicia_at: h(0, 16), termina_at: h(0, 18),
-          mascota: mascotas[0], medico: { nombre: 'Ana', apellidos: 'Ruiz' },
+          mascota: ms[0], medico: { nombre: 'Ana', apellidos: 'Ruiz' },
         }, {
           id: 'r2', estado: 'confirmada', tipo: 'vacunacion', inicia_at: h(6, 10), termina_at: h(6, 12),
-          mascota: mascotas[1], medico: { nombre: 'Luis', apellidos: 'Pérez' },
-        }],
-        recordatorio: { mascota: mascotas[0], tipo: 'vacuna', producto: 'triple felina', proxima_el: h(9, 12) },
+          mascota: ms[1], medico: { nombre: 'Luis', apellidos: 'Pérez' },
+        }].filter((r) => r.mascota),
+        recordatorio: proxima,
       };
     },
 

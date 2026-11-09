@@ -4,6 +4,7 @@ import { api } from './api.js';
 import { Layout, ToastProvider, useRuta, ir, Cargando, ErrorCarga, NAV } from './shell.js';
 import { Entrar, Registro, Recuperar, NuevaContrasena, SinConfig } from './auth.js';
 import { InicioTutor } from './tutor/inicio.js';
+import { Mascotas } from './tutor/mascotas.js';
 import { PerfilTutor } from './tutor/perfil.js';
 import { HoyMvz } from './mvz/hoy.js';
 import { AltaMvz, PerfilMvz } from './mvz/alta.js';
@@ -31,6 +32,7 @@ const mvzAprobado = (perfil) => perfil.rol === 'mvz' && perfil.extra?.estado ===
 function Vista({ vista, seccion, sub, perfil, onPerfil, setConteos }) {
   if (vista === 'tutor') {
     if (seccion === 'inicio') return html`<${InicioTutor} perfil=${perfil} />`;
+    if (seccion === 'mascotas') return html`<${Mascotas} key=${sub || 'lista'} sub=${sub} />`;
     if (seccion === 'perfil') return html`<${PerfilTutor} perfil=${perfil} onPerfil=${onPerfil} />`;
     return html`<${Proximamente} vista="tutor" id=${seccion} />`;
   }

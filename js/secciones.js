@@ -4,7 +4,6 @@ import { PageHead, NAV, todasLasSecciones } from './shell.js';
 
 const PLAN = {
   tutor: {
-    mascotas: [4, 'Mascotas', ['Perfil de cada mascota y foto', 'Antecedentes, alergias y medicamentos', 'Cartilla de vacunas y desparasitación', 'Documentos: estudios, recetas y cartilla física', 'Historia clínica de cada consulta']],
     agendar: [6, 'Agendar consulta', ['Mascota y dirección (la alcaldía sale del código postal)', 'Consulta general, especializada o vacunación', 'Bloques de 2 horas de médicos verificados de tu alcaldía', 'Motivo, síntomas y tiempo de evolución', 'Pago con tarjeta y confirmación inmediata']],
     consultas: [6, 'Consultas', ['Próximas y pasadas', 'Chat con el médico veterinario', 'Cancelar (gratis hasta 24 horas antes)', 'Calificar la consulta']],
   },

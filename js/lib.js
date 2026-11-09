@@ -82,6 +82,23 @@ export function diaRelativo(d) {
 export const ventana = (ini, fin) => `${diaRelativo(ini)}, ${hora(ini)} a ${hora(fin)}`;
 export const hoyISO = () => fmt({ year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).split('/').reverse().join('-');
 
+// Fechas sin hora ("2026-03-04"): se arman al mediodía UTC para que no se recorran un día en CDMX
+export function fechaDia(iso) {
+  if (!iso) return '';
+  const [y, m, d] = String(iso).split('-').map(Number);
+  return fmt({ day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(Date.UTC(y, m - 1, d, 12))).replace('.', '');
+}
+export function fechaDiaLarga(iso) {
+  if (!iso) return '';
+  const [y, m, d] = String(iso).split('-').map(Number);
+  return fmt({ day: 'numeric', month: 'long' }).format(new Date(Date.UTC(y, m - 1, d, 12)));
+}
+export const diasHasta = (iso) => {
+  const [y, m, d] = String(iso).split('-').map(Number);
+  const [hy, hm, hd] = hoyISO().split('-').map(Number);
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(hy, hm - 1, hd)) / 864e5);
+};
+
 export function edad(m) {
   if (m.fecha_nacimiento) {
     const meses = Math.floor((Date.now() - new Date(m.fecha_nacimiento)) / (30.44 * 864e5));
@@ -110,6 +127,29 @@ export const ESTADO_RESERVA = {
   cancelada_admin: ['neutral', 'Cancelada'],
 };
 export const TIPO_CONSULTA = { general: 'Consulta general', especialidad: 'Consulta especializada', vacunacion: 'Vacunación y desparasitación' };
+
+// ───────── Mascotas (fase 4) ─────────
+export const ESPECIE = { perro: 'Perro', gato: 'Gato' };
+export const SEXO = { macho: 'Macho', hembra: 'Hembra' };
+export const TIPO_CARTILLA = { vacuna: 'Vacuna', desparasitacion: 'Desparasitación' };
+export const DOC_MASCOTA = {
+  laboratorio: 'Estudio de laboratorio', imagen: 'Estudio de imagen', receta: 'Receta',
+  medico: 'Informe médico', cartilla: 'Cartilla física', otro: 'Otro',
+};
+
+// Cómo va la cartilla: vencido manda sobre lo que viene pronto
+export function estadoCartilla(filas) {
+  const con = (filas || []).filter((f) => f.proxima_el);
+  const hoy = hoyISO();
+  const vencidas = con.filter((f) => f.proxima_el < hoy).sort((a, b) => a.proxima_el.localeCompare(b.proxima_el));
+  const proxima = con.filter((f) => f.proxima_el >= hoy).sort((a, b) => a.proxima_el.localeCompare(b.proxima_el))[0] || null;
+  if (vencidas.length) {
+    return { tone: 'error', label: vencidas.some((f) => f.tipo === 'vacuna') ? 'Vacuna vencida' : 'Desparasitación vencida', vencidas, proxima };
+  }
+  if (!filas || !filas.length) return { tone: 'neutral', label: 'Sin cartilla', vencidas, proxima };
+  if (proxima && diasHasta(proxima.proxima_el) <= 30) return { tone: 'pendiente', label: 'Refuerzo pronto', vencidas, proxima };
+  return { tone: 'verificado', label: 'Cartilla al día', vencidas, proxima };
+}
 
 // ───────── Verificación ─────────
 export const ESTADO_VERIF = {

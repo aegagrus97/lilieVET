@@ -1,10 +1,9 @@
 // Inicio del tutor: consulta del día, mascotas y recordatorio de Lilie.
-import { html, DS, money, ventana, diaRelativo, hora, edad, capital, fechaLarga, TIPO_CONSULTA, ESTADO_RESERVA, nombreCorto } from '../lib.js';
+import { html, DS, money, ventana, diaRelativo, hora, edad, capital, fechaDiaLarga, TIPO_CONSULTA, ESTADO_RESERVA, ESPECIE, nombreCorto } from '../lib.js';
 import { api } from '../api.js';
 import { PageHead, Cargando, ErrorCarga, useDatos, ir } from '../shell.js';
 import { Seguimiento } from '../componentes.js';
 
-const ESPECIE = { perro: 'Perro', gato: 'Gato' };
 const nombreMedico = (m) => (m ? `${m.nombre} ${m.apellidos}`.trim() : 'Tu médico veterinario');
 
 // La INE se pide antes de la primera consulta; no impide agendar
@@ -81,10 +80,10 @@ export function InicioTutor({ perfil }) {
           <div class="spread"><h2 class="section-title" id="t-masc">Tus mascotas</h2>
             <${DS.Button} variant="ghost" size="sm" onClick=${() => ir('mascotas')}>Ver todas<//></div>
           <div class="grid-cards">
-            ${mascotas.map((m) => html`<${DS.PetCard} key=${m.id} name=${m.nombre} species=${m.especie}
+            ${mascotas.map((m) => html`<${DS.PetCard} key=${m.id} name=${m.nombre} species=${m.especie} photo=${m.foto}
               detail=${[ESPECIE[m.especie], m.raza, edad(m)].filter(Boolean).join(' · ')}
-              badges=${m.vacunaVencida ? [{ label: 'Vacuna vencida', tone: 'error' }] : [{ label: 'Cartilla al día', tone: 'verificado' }]}
-              onClick=${() => ir('mascotas')} />`)}
+              badges=${[{ label: m.cartillaEstado.label, tone: m.cartillaEstado.tone }]}
+              onClick=${() => ir('mascotas/' + m.id)} />`)}
           </div>
         </section>
 
@@ -107,7 +106,7 @@ export function InicioTutor({ perfil }) {
         ${proximas.length === 0 && html`<${AvisoIne} perfil=${perfil} hayConsulta=${false} />`}
         ${recordatorio && html`<${DS.CharacterNote} who="lilie"
           action=${html`<${DS.Button} variant="ghost" onClick=${() => ir('agendar')}>Agendar refuerzo<//>`}>
-          A ${recordatorio.mascota?.nombre} le toca su refuerzo de ${recordatorio.producto} el ${fechaLarga(recordatorio.proxima_el).replace(/^[^,]+, /, '')}. Te aviso tres días antes.
+          A ${recordatorio.mascota?.nombre} le toca su refuerzo de ${recordatorio.producto} el ${fechaDiaLarga(recordatorio.proxima_el)}. Te aviso tres días antes.
         <//>`}
         <${Avisos} />
       </aside>

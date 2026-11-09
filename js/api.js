@@ -1,7 +1,7 @@
 // Capa de datos. Toda la app habla con `api`; por dentro usa Supabase (tablas de la fase 1)
 // o, si aún no hay conexión, la vista de muestra con datos de ejemplo.
 import { demoApi } from './demo.js';
-import { hoyISO, prepararArchivo, DOC, armarVerif, ordenarCola } from './lib.js';
+import { hoyISO, prepararArchivo, DOC, armarVerif, ordenarCola, estadoCartilla } from './lib.js';
 export { armarVerif, ordenarCola };
 
 const cfg = window.LV_CONFIG || {};
@@ -18,6 +18,16 @@ function supabaseApi() {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   });
   const ok = ({ data, error }) => { if (error) throw traducir(error); return data; };
+  const uid = async () => (await sb.auth.getUser()).data.user.id;
+
+  // El depósito "expediente" es privado: cada archivo se abre con un enlace temporal
+  async function urlsExpediente(rutas, segundos = 600) {
+    const limpias = [...new Set(rutas.filter(Boolean))];
+    if (!limpias.length) return {};
+    const firmadas = ok(await sb.storage.from('expediente').createSignedUrls(limpias, segundos));
+    return Object.fromEntries(firmadas.filter((f) => f.signedUrl).map((f) => [f.path, f.signedUrl]));
+  }
+  const sinDeposito = (ruta) => String(ruta || '').replace(/^expediente\//, '');
 
   return {
     mode: 'supabase',
@@ -138,23 +148,87 @@ function supabaseApi() {
         .order('created_at', { ascending: false }).limit(60));
     },
 
+    // ───────── Mascotas, cartilla, documentos e historia clínica (fase 4) ─────────
+    async mascotas() {
+      const ms = ok(await sb.from('mascotas').select('*').is('borrada_at', null).order('created_at'));
+      if (!ms.length) return [];
+      const [cart, fotos] = await Promise.all([
+        sb.from('cartilla').select('mascota_id, tipo, proxima_el').in('mascota_id', ms.map((m) => m.id)),
+        urlsExpediente(ms.map((m) => m.foto_path), 3600),
+      ]);
+      const cs = ok(cart);
+      return ms.map((m) => ({ ...m, foto: fotos[m.foto_path] || null, cartillaEstado: estadoCartilla(cs.filter((c) => c.mascota_id === m.id)) }));
+    },
+
+    async mascota(id) {
+      const yo = await uid();
+      const [m, cart, docs, hist] = await Promise.all([
+        sb.from('mascotas').select('*').eq('id', id).single(),
+        sb.from('cartilla').select('*').eq('mascota_id', id).order('aplicada_el', { ascending: false }),
+        sb.from('documentos_mascota').select('*').eq('mascota_id', id).order('created_at', { ascending: false }),
+        sb.rpc('historia_clinica', { p_mascota: id }),
+      ]);
+      const mm = ok(m), ds = ok(docs);
+      const urls = await urlsExpediente([mm.foto_path, ...ds.map((d) => sinDeposito(d.ruta))], 3600);
+      return {
+        ...mm,
+        foto: urls[mm.foto_path] || null,
+        cartilla: ok(cart),
+        documentos: ds.map((d) => ({ ...d, url: urls[sinDeposito(d.ruta)] || null, mio: d.subido_por === yo })),
+        historia: ok(hist),
+        cartillaEstado: estadoCartilla(ok(cart)),
+      };
+    },
+
+    async guardarMascota(id, d) {
+      if (id) { ok(await sb.from('mascotas').update(d).eq('id', id)); return id; }
+      return ok(await sb.from('mascotas').insert({ ...d, tutor_id: await uid() }).select('id').single()).id;
+    },
+    async borrarMascota(id) { ok(await sb.from('mascotas').update({ borrada_at: new Date().toISOString() }).eq('id', id)); },
+
+    async subirFotoMascota(id, file) {
+      const f = await prepararArchivo(file, { pdf: false });
+      const ruta = `${id}/foto-${Date.now()}.jpg`;
+      ok(await sb.storage.from('expediente').upload(ruta, f, { contentType: f.type || 'image/jpeg', upsert: false }));
+      ok(await sb.from('mascotas').update({ foto_path: ruta }).eq('id', id));
+      return ruta;
+    },
+
+    async agregarCartilla(mascotaId, d) {
+      return ok(await sb.from('cartilla').insert({ ...d, mascota_id: mascotaId, origen: 'tutor' }).select('*').single());
+    },
+    async borrarCartilla(id) { ok(await sb.from('cartilla').delete().eq('id', id)); },
+
+    async subirDocumentoMascota(mascotaId, { tipo, titulo }, file) {
+      const f = await prepararArchivo(file, { pdf: true });
+      const ext = f.type === 'application/pdf' ? 'pdf' : f.type === 'image/png' ? 'png' : /hei[cf]/i.test(f.type + f.name) ? 'heic' : 'jpg';
+      const ruta = `${mascotaId}/${tipo}-${Date.now()}.${ext}`;
+      ok(await sb.storage.from('expediente').upload(ruta, f, { contentType: f.type || 'image/jpeg', upsert: false }));
+      return ok(await sb.from('documentos_mascota')
+        .insert({ mascota_id: mascotaId, tipo, titulo, ruta: 'expediente/' + ruta }).select('*').single());
+    },
+
     async tutorInicio() {
+      const hoy = hoyISO();
       const [mascotas, reservas, cartilla] = await Promise.all([
         sb.from('mascotas').select('id, nombre, especie, raza, sexo, fecha_nacimiento, edad_aprox_meses, foto_path').is('borrada_at', null).order('created_at'),
         sb.from('reservas').select('id, estado, tipo, inicia_at, termina_at, mascota_id, mvz_id')
           .in('estado', ['confirmada', 'en_domicilio']).order('inicia_at').limit(5),
-        sb.from('cartilla').select('mascota_id, tipo, producto, proxima_el').gte('proxima_el', hoyISO()).order('proxima_el').limit(5),
+        sb.from('cartilla').select('mascota_id, tipo, producto, proxima_el').order('proxima_el'),
       ]);
       const ms = ok(mascotas), rs = ok(reservas), cs = ok(cartilla);
       const ids = [...new Set(rs.map((r) => r.mvz_id))];
-      const medicos = ids.length ? ok(await sb.from('mvz_publicos').select('id, nombre, apellidos, foto_path').in('id', ids)) : [];
-      const porId = Object.fromEntries(medicos.map((m) => [m.id, m]));
+      const [medicos, fotos] = await Promise.all([
+        ids.length ? sb.from('mvz_publicos').select('id, nombre, apellidos, foto_path').in('id', ids) : Promise.resolve({ data: [] }),
+        urlsExpediente(ms.map((m) => m.foto_path), 3600),
+      ]);
+      const porId = Object.fromEntries(ok(medicos).map((m) => [m.id, m]));
       const mascota = Object.fromEntries(ms.map((m) => [m.id, m]));
-      const vencidas = new Set(); // la cartilla vencida se calcula en la fase 4
+      const proxima = cs.find((c) => c.proxima_el && c.proxima_el >= hoy);
       return {
-        mascotas: ms.map((m) => ({ ...m, vacunaVencida: vencidas.has(m.id) })),
+        mascotas: ms.map((m) => ({ ...m, foto: fotos[m.foto_path] || null, cartillaEstado: estadoCartilla(cs.filter((c) => c.mascota_id === m.id)) })),
         proximas: rs.map((r) => ({ ...r, mascota: mascota[r.mascota_id], medico: porId[r.mvz_id] })),
-        recordatorio: cs[0] ? { ...cs[0], mascota: mascota[cs[0].mascota_id] } : null,
+        recordatorio: proxima ? { ...proxima, mascota: mascota[proxima.mascota_id] } : null,
       };
     },
 

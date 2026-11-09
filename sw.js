@@ -1,12 +1,12 @@
 // LilieVET · service worker: guarda los archivos de la app para que abra rápido.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
-const VERSION = 'lv-fase3-1';
+const VERSION = 'lv-fase4-1';
 const ARCHIVOS = [
   './', 'index.html', 'config.js', 'manifest.webmanifest',
   'ds/tokens.css', 'ds/bundle.css', 'ds/bundle.js', 'css/app.css',
   'vendor/react.production.min.js', 'vendor/react-dom.production.min.js', 'vendor/htm.umd.js', 'vendor/supabase.js',
   'js/main.js', 'js/lib.js', 'js/api.js', 'js/demo.js', 'js/shell.js', 'js/auth.js', 'js/secciones.js', 'js/componentes.js', 'js/cuenta.js',
-  'js/tutor/inicio.js', 'js/tutor/perfil.js', 'js/mvz/hoy.js', 'js/mvz/alta.js', 'js/admin/inicio.js', 'js/admin/verificacion.js',
+  'js/tutor/inicio.js', 'js/tutor/mascotas.js', 'js/tutor/perfil.js', 'js/mvz/hoy.js', 'js/mvz/alta.js', 'js/admin/inicio.js', 'js/admin/verificacion.js',
   'img/lilievet-logo.svg', 'img/lilievet-corazon.svg', 'icons/icon.svg', 'icons/favicon-32.png', 'icons/icon-192.png',
 ];
 self.addEventListener('install', (e) => {

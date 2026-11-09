@@ -290,3 +290,12 @@ a { color: var(--primary); }
 
 .box-head .lv-badge, .spread .lv-badge, .checklist .lv-badge, td .lv-badge { white-space: nowrap; flex: none; }
 .decision .row { gap: var(--espacio-2); }
+
+/* ───────── Ficha de la mascota (fase 4) ───────── */
+.page-ficha { max-width: 880px; gap: var(--espacio-4); }
+.page-ficha > .box { max-width: none; }
+.ficha-head { flex-wrap: wrap; }
+.ficha-head .titulo-2 { margin: 0; }
+.ficha-head > .stack-sm { flex: 1; min-width: 200px; }
+.page-ficha details > summary { cursor: pointer; width: fit-content; }
+.page-ficha details > summary::-webkit-details-marker { display: none; }
